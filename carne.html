@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Carnê Pix Automático - AppSheet</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
+
+        /* --- CONFIGURAÇÕES DE IMPRESSÃO --- */
+        @media print {
+            body { background: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            #printable-area { display: block !important; }
+            @page { size: A4 portrait; margin: 5mm 10mm; }
+        }
+
+        /* --- ESTILOS GERAIS --- */
+        body { font-family: 'Roboto', sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+
+        /* PAINEL */
+        .painel-controle {
+            background: white; padding: 25px; border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 900px; margin: 0 auto 30px auto;
+            border-left: 5px solid #000;
+        }
+        .painel-title { margin-top: 0; text-transform: uppercase; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .input-group { display: flex; flex-direction: column; }
+        label { font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #555; text-transform: uppercase; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        
+        .btn-gerar {
+            background: #000; color: white; border: none; padding: 12px 30px;
+            border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px;
+            width: 100%; transition: background 0.3s;
+        }
+        .btn-gerar:hover { background: #333; }
+        
+        /* LAYOUT CARNÊ */
+        #printable-area { display: flex; flex-direction: column; gap: 0; }
+        .carne-row { display: flex; width: 100%; height: 92mm; border-bottom: 1px dashed #999; box-sizing: border-box; background: white; page-break-inside: avoid; padding: 5px 0; }
+        .canhoto { width: 28%; border-right: 1px dashed #000; padding: 5px 10px; display: flex; flex-direction: column; justify-content: space-between; }
+        .boleto { width: 72%; padding: 5px 10px 5px 15px; display: flex; flex-direction: column; }
+        
+        /* ESTILOS INTERNOS */
+        .canhoto-header { font-weight: 900; font-size: 12px; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 2px; }
+        .canhoto-field { margin-bottom: 4px; }
+        .lbl-sm { font-size: 7px; font-weight: bold; display: block; color: #444; text-transform: uppercase; }
+        .val-sm { font-size: 10px; font-weight: bold; display: block; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .boleto-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; margin-bottom: 5px; padding-bottom: 5px; }
+        .boleto-logo { font-size: 16px; font-weight: 900; text-transform: uppercase; }
+        .boleto-tipo { font-size: 10px; font-weight: bold; background: #eee; padding: 2px 5px; border-radius: 3px; }
+        .boleto-body { display: flex; gap: 10px; height: 100%; }
+        .boleto-dados { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+        .boleto-row { display: flex; gap: 5px; }
+        .b-field { border: 1px solid #999; border-radius: 3px; padding: 2px 4px; flex: 1; }
+        
+        /* Instruções e Baixa */
+        .instrucoes-texto { font-size: 7.5px; color: #333; text-align: justify; margin-top: 5px; line-height: 1.1; border: 1px solid #e0e0e0; padding: 3px; border-radius: 3px; }
+        .area-baixa { margin-top: 3px; border: 1px solid #000; border-radius: 3px; flex-grow: 1; display: flex; flex-direction: column; }
+        .baixa-titulo { background: #eee; font-size: 8px; font-weight: bold; text-align: center; padding: 2px; border-bottom: 1px solid #000; }
+        .baixa-linha { border-bottom: 1px dotted #ccc; padding: 3px 4px; font-size: 9px; display: flex; justify-content: space-between; }
+        .baixa-linha:last-child { border-bottom: none; }
+        
+        .boleto-qr { width: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px dotted #ccc; padding-left: 5px; }
+        .qr-img { width: 90px; height: 90px; margin-bottom: 5px; }
+        .pix-tag { font-size: 10px; font-weight: 900; background: #000; color: #fff; padding: 2px 8px; border-radius: 10px; margin-bottom: 5px;}
+    </style>
+</head>
+<body>
+
+    <div class="painel-controle no-print">
+        <h2 class="painel-title">Emissor de Carnê - Ótica Tecnológica</h2>
+        <div class="form-grid">
+            <div class="input-group"><label>Nome do Cliente</label><input type="text" id="nomeCliente"></div>
+            <div class="input-group"><label>Código / OS</label><input type="text" id="numOS"></div>
+            <div class="input-group"><label>CPF (Opcional)</label><input type="text" id="cpfCliente"></div>
+        </div>
+        <div class="form-grid">
+            <div class="input-group"><label>Valor TOTAL (R$)</label><input type="number" id="valorTotal" step="0.01"></div>
+            <div class="input-group"><label>Entrada (R$)</label><input type="number" id="valorEntrada" step="0.01" value="0"></div>
+            <div class="input-group"><label>Qtd Parcelas</label><input type="number" id="qtdParcelas" value="1" max="24"></div>
+        </div>
+        <div class="form-grid">
+            <div class="input-group" style="background: #e8f0fe; padding: 5px; border-radius: 5px;"><label>Data Entrega</label><input type="date" id="dataEntrega"></div>
+            <div class="input-group" style="background: #e8f0fe; padding: 5px; border-radius: 5px;"><label>Venc. 2ª Parcela</label><input type="date" id="dataRestante"></div>
+        </div>
+        <button type="button" class="btn-gerar" onclick="prepararImpressao()">🖨️ GERAR CARNÊ E IMPRIMIR</button>
+    </div>
+
+    <div id="printable-area"></div>
+
+    <script>
+        // --- NOVIDADE: LÊ DADOS DO APPSHEET PELA URL ---
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            
+            if (params.has('cliente')) document.getElementById('nomeCliente').value = params.get('cliente');
+            if (params.has('os')) document.getElementById('numOS').value = params.get('os');
+            if (params.has('cpf')) document.getElementById('cpfCliente').value = params.get('cpf');
+            if (params.has('total')) document.getElementById('valorTotal').value = params.get('total');
+            if (params.has('entrada')) document.getElementById('valorEntrada').value = params.get('entrada');
+            if (params.has('parcelas')) document.getElementById('qtdParcelas').value = params.get('parcelas');
+            if (params.has('entrega')) document.getElementById('dataEntrega').value = params.get('entrega');
+            if (params.has('vencimento')) document.getElementById('dataRestante').value = params.get('vencimento');
+
+            // Se vier todos os dados essenciais, pode até gerar automático (opcional)
+            // if (params.has('cliente') && params.has('total')) prepararImpressao(); 
+        };
+
+        // --- FUNÇÕES DE GERAÇÃO (IGUAL AO ANTERIOR) ---
+        async function prepararImpressao() {
+            const btn = document.querySelector('.btn-gerar');
+            try {
+                btn.disabled = true; btn.style.opacity = "0.5"; btn.innerText = "Gerando...";
+                
+                const d = lerFormulario();
+                if (!d) { restaurarUI(btn); return; }
+
+                const container = document.getElementById('printable-area');
+                container.innerHTML = gerarHTMLCarnes(d);
+
+                const imagens = container.querySelectorAll('img.qr-img');
+                const promessas = [];
+                imagens.forEach(img => {
+                    promessas.push(new Promise((resolve) => {
+                        if (img.complete) resolve();
+                        else { img.onload = resolve; img.onerror = resolve; }
+                    }));
+                });
+                await Promise.all(promessas);
+
+                setTimeout(() => { window.print(); restaurarUI(btn); }, 500);
+            } catch (err) { alert(err.message); restaurarUI(btn); }
+        }
+
+        function restaurarUI(btn) { btn.disabled = false; btn.style.opacity = "1"; btn.innerText = "🖨️ GERAR CARNÊ E IMPRIMIR"; }
+
+        function lerFormulario() {
+            const cliente = document.getElementById('nomeCliente').value.toUpperCase();
+            const os = document.getElementById('numOS').value;
+            const cpf = document.getElementById('cpfCliente').value;
+            const total = parseFloat(document.getElementById('valorTotal').value);
+            const entrada = parseFloat(document.getElementById('valorEntrada').value) || 0;
+            const qtdParcelas = parseInt(document.getElementById('qtdParcelas').value);
+            const dataEntrega = document.getElementById('dataEntrega').value;
+            const dataRestante = document.getElementById('dataRestante').value;
+
+            if(!cliente || isNaN(total) || !qtdParcelas || !dataEntrega) return null;
+            if(qtdParcelas > 1 && !dataRestante) { alert("Informe o vencimento da 2ª parcela"); return null; }
+            return { cliente, os, cpf, total, entrada, qtdParcelas, dataEntrega, dataRestante };
+        }
+
+        function gerarHTMLCarnes(d) {
+            const saldoRestante = d.total - d.entrada;
+            const parcelasRestantes = d.qtdParcelas - 1;
+            let valorRestanteBase = 0, restoCentavos = 0;
+            if(parcelasRestantes > 0) {
+                valorRestanteBase = Math.floor((saldoRestante / parcelasRestantes) * 100) / 100;
+                restoCentavos = (saldoRestante - (valorRestanteBase * parcelasRestantes)).toFixed(2);
+            }
+
+            let dataAtualEntrada = new Date(d.dataEntrega + 'T12:00:00');
+            let dataAtualRestante = d.dataRestante ? new Date(d.dataRestante + 'T12:00:00') : new Date();
+            const dataEmissao = new Date().toLocaleDateString('pt-BR');
+            let htmlFinal = '';
+
+            for (let i = 1; i <= d.qtdParcelas; i++) {
+                let valorParcela = 0, dataFormatada = "", obs = "";
+                if (i === 1) {
+                    valorParcela = d.entrada; dataFormatada = dataAtualEntrada.toLocaleDateString('pt-BR'); obs = "ENTRADA (ATO DA ENTREGA)";
+                } else {
+                    valorParcela = valorRestanteBase; if (i === 2) valorParcela += parseFloat(restoCentavos);
+                    dataFormatada = dataAtualRestante.toLocaleDateString('pt-BR'); obs = "CREDIÁRIO LOJA";
+                    dataAtualRestante.setMonth(dataAtualRestante.getMonth() + 1);
+                }
+                let valorStr = valorParcela.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                let pixPayload = gerarPayloadPix("oticatecnologica@gmail.com", "OTICA TECNOLOGICA", "ITAPIPOCA", valorParcela.toFixed(2), `${d.os}-${i}`);
+                let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(pixPayload)}`;
+
+                htmlFinal += `
+                <div class="carne-row">
+                    <div class="canhoto">
+                        <div class="canhoto-header">ÓTICA TECNOLÓGICA</div>
+                        <div class="canhoto-field"><span class="lbl-sm">OS / CLIENTE</span><span class="val-sm">${d.os} - ${d.cliente}</span></div>
+                         <div class="canhoto-field"><span class="lbl-sm">VENCIMENTO</span><span class="val-sm" style="font-size:12px;">${dataFormatada}</span></div>
+                        <div class="canhoto-field" style="margin-top:5px;"><span class="lbl-sm">VALOR (R$)</span><span class="val-sm" style="font-size:12px;">${valorStr}</span></div>
+                        <div class="canhoto-field" style="margin-top: auto; border-top:1px solid #000; padding-top:2px;"><span class="lbl-sm">PARCELA</span><span class="val-sm">${i} / ${d.qtdParcelas}</span></div>
+                    </div>
+                    <div class="boleto">
+                        <div class="boleto-header"><div class="boleto-logo">ÓTICA TECNOLÓGICA</div><div class="boleto-tipo">${obs}</div></div>
+                        <div class="boleto-body">
+                            <div class="boleto-dados">
+                                <div class="boleto-row">
+                                    <div class="b-field" style="flex:1;"><span class="lbl-sm">CEDENTE</span><span class="val-sm">ÓTICA TECNOLÓGICA</span></div>
+                                    <div class="b-field" style="flex:0.5;"><span class="lbl-sm">EMISSÃO</span><span class="val-sm">${dataEmissao}</span></div>
+                                    <div class="b-field" style="flex:0.4;"><span class="lbl-sm">OS</span><span class="val-sm">${d.os}</span></div>
+                                </div>
+                                <div class="boleto-row">
+                                    <div class="b-field" style="flex:0.4;"><span class="lbl-sm">PARCELA</span><span class="val-sm">${i} / ${d.qtdParcelas}</span></div>
+                                    <div class="b-field" style="flex:1;"><span class="lbl-sm">VENCIMENTO</span><span class="val-sm" style="font-size:14px;">${dataFormatada}</span></div>
+                                    <div class="b-field" style="flex:1; background:#f9f9f9;"><span class="lbl-sm">VALOR DO DOCUMENTO</span><span class="val-sm" style="font-size:14px;">R$ ${valorStr}</span></div>
+                                </div>
+                                <div class="boleto-row"><div class="b-field" style="width:100%;"><span class="lbl-sm">PAGADOR</span><span class="val-sm">${d.cliente} ${d.cpf ? '- CPF: '+d.cpf : ''}</span></div></div>
+                                <div class="instrucoes-texto">Pague na loja ou com credenciado. Exija documento e carimbo como comprovante. Pagamentos com mais de 45 dias de atraso poderão ser protestados. Evite transtornos mantendo suas parcelas em dia.</div>
+                                <div class="area-baixa">
+                                    <div class="baixa-titulo">REGISTRO DE PAGAMENTO / BAIXA (USO DO COBRADOR)</div>
+                                    <div class="baixa-linha"><span>Dt: __/__ Val: R$_______</span><span>Ass:___________</span></div>
+                                    <div class="baixa-linha"><span>Dt: __/__ Val: R$_______</span><span>Ass:___________</span></div>
+                                    <div class="baixa-linha"><span>Dt: __/__ Val: R$_______</span><span>Ass:___________</span></div>
+                                </div>
+                            </div>
+                            <div class="boleto-qr"><span class="pix-tag">PAGUE NO PIX</span><img src="${qrUrl}" class="qr-img"><div class="lbl-sm" style="text-align:center;">App do Banco</div></div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            return htmlFinal;
+        }
+
+        function gerarPayloadPix(chave, nome, cidade, valor, txid) {
+            const format = (id, value) => `${id}${value.length.toString().padStart(2, '0')}${value}`;
+            const payloadKey = format('00', 'br.gov.bcb.pix') + format('01', chave);
+            let payload = '000201' + format('26', payloadKey) + format('52', '0000') + format('53', '986') + format('54', valor) + format('58', 'BR') + format('59', nome) + format('60', cidade) + format('62', format('05', txid || '***')) + '6304';
+            let crc = 0xFFFF;
+            for (let i = 0; i < payload.length; i++) {
+                crc ^= payload.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) { if ((crc & 0x8000) !== 0) crc = (crc << 1) ^ 0x1021; else crc = crc << 1; }
+            }
+            return payload + (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+        }
+    </script>
+</body>
+</html>
