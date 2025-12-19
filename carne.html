@@ -9,10 +9,7 @@
         /* --- CONFIGURAÇÕES DE IMPRESSÃO --- */
         @media print {
             body { background: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
-            
-            /* Oculta painel e TELA DE LOADING na impressão */
             .no-print, #loading-overlay { display: none !important; }
-            
             #printable-area { display: block !important; }
             @page { size: A4 portrait; margin: 5mm 10mm; }
         }
@@ -106,11 +103,21 @@
     <div id="printable-area"></div>
 
     <script>
+        // CORREÇÃO DE DATA (Assume PADRÃO AMERICANO: Mês/Dia/Ano)
         function corrigirDataAppSheet(dataStr) {
             if (!dataStr) return "";
             if (dataStr.includes('/')) {
                 const partes = dataStr.split('/'); 
-                if (partes.length === 3) return `${partes[2]}-${partes[1]}-${partes[0]}`;
+                // Assumindo Mês/Dia/Ano vindo do AppSheet
+                // partes[0] = Mês
+                // partes[1] = Dia
+                // partes[2] = Ano
+                // Retorno para input HTML (Ano-Mês-Dia)
+                
+                // Função auxiliar para garantir 2 dígitos (01, 05, etc)
+                const pad = (n) => n.toString().padStart(2, '0');
+                
+                return `${partes[2]}-${pad(partes[0])}-${pad(partes[1])}`;
             }
             return dataStr;
         }
@@ -124,16 +131,16 @@
             if (params.has('total')) document.getElementById('valorTotal').value = params.get('total');
             if (params.has('entrada')) document.getElementById('valorEntrada').value = params.get('entrada');
             if (params.has('parcelas')) document.getElementById('qtdParcelas').value = params.get('parcelas');
+            
+            // Aplica a correção de data Americana
             if (params.has('entrega')) document.getElementById('dataEntrega').value = corrigirDataAppSheet(params.get('entrega'));
             if (params.has('vencimento')) document.getElementById('dataRestante').value = corrigirDataAppSheet(params.get('vencimento'));
 
             if (params.has('cliente') && params.has('total')) {
-                // Inicia o processo com um pequeno delay visual
                 setTimeout(() => { preparingAutoPrint(); }, 500);
             }
         };
 
-        // Função wrapper para disparo automático
         function preparingAutoPrint() {
             prepararImpressao();
         }
@@ -143,7 +150,6 @@
             const overlay = document.getElementById('loading-overlay');
             
             try {
-                // UI Feedback
                 btn.disabled = true; 
                 overlay.style.visibility = "visible"; 
                 
@@ -153,7 +159,6 @@
                 const container = document.getElementById('printable-area');
                 container.innerHTML = gerarHTMLCarnes(d);
 
-                // Espera carregar os QR Codes
                 const imagens = container.querySelectorAll('img.qr-img');
                 const promessas = [];
                 imagens.forEach(img => {
@@ -164,11 +169,10 @@
                 });
                 await Promise.all(promessas);
 
-                // IMPORTANTE: Esconde o overlay ANTES de imprimir
                 setTimeout(() => { 
-                    overlay.style.visibility = "hidden"; // Esconde na tela
+                    overlay.style.visibility = "hidden";
                     window.print(); 
-                    btn.disabled = false; // Reabilita botão
+                    btn.disabled = false;
                 }, 800);
 
             } catch (err) { alert(err.message); restaurarUI(btn, overlay); }
@@ -217,8 +221,14 @@
                     dataFormatada = dataAtualRestante.toLocaleDateString('pt-BR'); obs = "CREDIÁRIO LOJA";
                     dataAtualRestante.setMonth(dataAtualRestante.getMonth() + 1);
                 }
+                
                 let valorStr = valorParcela.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                let pixPayload = gerarPayloadPix("oticatecnologica@gmail.com", "OTICA TECNOLOGICA", "ITAPIPOCA", valorParcela.toFixed(2), `${d.os}-${i}`);
+                
+                // --- TXID SIMPLIFICADO: OS + PARCELA ---
+                // Exemplo: OS358-1
+                let txidPersonalizado = `${d.os}-${i}`;
+                
+                let pixPayload = gerarPayloadPix("oticatecnologica@gmail.com", "OTICA TECNOLOGICA", "ITAPIPOCA", valorParcela.toFixed(2), txidPersonalizado);
                 let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(pixPayload)}`;
 
                 htmlFinal += `
