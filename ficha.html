@@ -46,15 +46,25 @@
         table { width: 100%; border-collapse: collapse; font-size: 9px; }
         th, td { border: 1px solid #000; padding: 1px; text-align: center; }
         th { background-color: #e0e0e0; font-weight: bold; font-size: 7px; }
-        td { height: 14px; } /* Altura mínima para escrever à mão */
+        td { height: 14px; } 
 
         .fluxo-table th { font-size: 7px; padding: 3px; }
         .fluxo-table td { height: 16px; font-size: 9px; } 
 
         .legal-text { font-size: 7px; text-align: justify; margin-top: 5px; line-height: 1; }
-        .team-signatures { display: flex; justify-content: space-between; margin-top: 3px; gap: 10px; }
-        .team-sig-box { flex: 1; text-align: center; }
-        .team-sig-box span { font-size: 6px; font-weight: bold; border-top: 1px solid #000; display: block; margin-top: 10px; }
+        
+        /* Assinaturas Ajustadas */
+        .team-signatures { display: flex; justify-content: space-between; margin-top: 5px; gap: 10px; }
+        .team-sig-box { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: flex-end; }
+        /* A linha de input agora fica em cima */
+        .team-sig-box .sig-line { 
+            border-bottom: 1px solid #000; 
+            height: 14px; 
+            width: 100%; 
+            font-weight: bold; font-size: 10px;
+            margin-bottom: 2px;
+        }
+        .team-sig-box span { font-size: 6px; font-weight: bold; display: block; }
 
         /* Loading Overlay */
         #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.95); display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 9999; }
@@ -97,7 +107,7 @@
             <div class="row">
                 <div class="field" style="flex: 1.5;">
                     <label>Apelido</label>
-                    <div class="input-line"></div>
+                    <div class="input-line" id="f_apelido"></div>
                 </div>
                 <div class="field" style="flex: 1;">
                     <label>Data Nasc.</label>
@@ -110,24 +120,16 @@
             </div>
             
             <div class="row">
-                <div class="field" style="flex: 3;">
+                <div class="field" style="flex: 1;">
                     <label>Endereço Completo</label>
                     <div class="input-line" id="f_endereco"></div>
-                </div>
-                <div class="field" style="flex: 0.5;">
-                    <label>Nº</label>
-                    <div class="input-line"></div>
-                </div>
-                <div class="field" style="flex: 1.5;">
-                    <label>Bairro</label>
-                    <div class="input-line"></div>
                 </div>
             </div>
 
             <div class="row">
                 <div class="field" style="flex: 3;">
                     <label>Ponto de Referência (Obrigatório)</label>
-                    <div class="input-line"></div>
+                    <div class="input-line" id="f_ref"></div>
                 </div>
                 <div class="field" style="flex: 1.5; background: #eee; padding: 0 2px;">
                     <label>Melhor Horário p/ Cobrança</label>
@@ -167,21 +169,30 @@
                 </div>
                 <div class="field" style="flex: 1;">
                     <label>Película / Tratamento</label>
-                    <div class="input-line"></div>
+                    <div class="input-line" id="f_tratamento"></div>
                 </div>
             </div>
             
             <div class="row">
                 <div class="field">
                      <label>Observações Técnicas</label>
-                     <div class="input-line"></div>
+                     <div class="input-line" id="f_obs"></div>
                 </div>
             </div>
 
             <div class="team-signatures">
-                <div class="team-sig-box"><span>Vendedor(a)</span></div>
-                <div class="team-sig-box"><span>Agente</span></div>
-                <div class="team-sig-box"><span id="f_doutor">Optometrista</span></div>
+                <div class="team-sig-box">
+                    <div class="sig-line" id="f_vendedor"></div>
+                    <span>Vendedor(a)</span>
+                </div>
+                <div class="team-sig-box">
+                    <div class="sig-line" id="f_indicacao"></div>
+                    <span>Agente / Indicação</span>
+                </div>
+                <div class="team-sig-box">
+                    <div class="sig-line" id="f_doutor"></div>
+                    <span>Optometrista / Oftalmologista</span>
+                </div>
             </div>
         </div>
 
@@ -237,25 +248,8 @@
                     <th width="13%">RUBRICA</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
+            <tbody id="tabela_pagamentos">
+                </tbody>
         </table>
         
         <div style="font-size: 8px; margin-top: 5px; text-align: center; font-style: italic;">
@@ -264,61 +258,102 @@
     </div>
 
     <script>
-        // Função para formatar data DD/MM/AAAA para texto simples se precisar
-        function formatarData(dataStr) {
-            return dataStr ? dataStr : "";
+        function lerNumero(str) {
+            if (!str) return 0;
+            str = String(str).replace('R$', '').trim();
+            if (str.includes(',') && str.includes('.')) { str = str.replace(/\./g, '').replace(',', '.'); } 
+            else if (str.includes(',')) { str = str.replace(',', '.'); }
+            return parseFloat(str) || 0;
+        }
+
+        function formatarMoeda(val) {
+            return val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
         }
 
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
-            
-            // Função rápida para preencher se existir
             const set = (id, param) => {
                 if(params.has(param)) {
                     let val = params.get(param);
-                    // Remove %20 e outros encodings se sobrarem, e põe maiúsculo
                     if(val) document.getElementById(id).innerText = decodeURIComponent(val).toUpperCase();
                 }
             };
 
-            // Mapeamento Básico
+            // Mapeamento
             set('head_os', 'os');
             set('verso_os', 'os');
             set('head_data', 'data_venda');
-            
-            // Cliente
             set('f_nome', 'cliente');
+            set('f_apelido', 'apelido');
             set('f_nasc', 'nasc');
             set('f_cpf', 'cpf');
-            set('f_endereco', 'end'); // Endereço completo aqui
+            set('f_endereco', 'end'); 
             set('f_whats', 'whats');
-            
-            // Dados Técnicos (Via ANY do AppSheet)
             set('f_usuario', 'usuario');
             set('f_armacao', 'armacao');
-            
-            // Se tiver nome do doutor, substitui a label "Optometrista"
-            if(params.has('doutor')) {
-                let doc = decodeURIComponent(params.get('doutor')).toUpperCase();
-                if(doc) document.getElementById('f_doutor').innerText = doc;
-            }
-
-            // Financeiro
-            set('f_total', 'total');
-            set('f_entrada', 'entrada');
+            set('f_tratamento', 'tratamento');
+            set('f_obs', 'obs');
             set('f_entrega', 'entrega');
 
-            // Cálculo do Saldo Devedor automático
+            // Assinaturas em cima da linha
+            set('f_doutor', 'doutor');
+            set('f_vendedor', 'vendedor');
+            set('f_indicacao', 'indicacao');
+
+            // FINANCEIRO BLINDADO
+            let saldoDevedor = 0;
             if(params.has('total')) {
-                let t = parseFloat(params.get('total')) || 0;
-                let e = parseFloat(params.get('entrada')) || 0;
-                // Formata para moeda BRL
-                document.getElementById('f_saldo').innerText = (t - e).toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                document.getElementById('f_total').innerText = t.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                if(params.has('entrada')) {
-                     document.getElementById('f_entrada').innerText = e.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                }
+                let total = lerNumero(params.get('total'));
+                let entrada = lerNumero(params.get('entrada'));
+                
+                document.getElementById('f_total').innerText = formatarMoeda(total);
+                document.getElementById('f_entrada').innerText = formatarMoeda(entrada);
+                
+                saldoDevedor = total - entrada;
+                document.getElementById('f_saldo').innerText = formatarMoeda(saldoDevedor);
             }
+
+            // Processar Listas de Pagamentos
+            const tbody = document.getElementById('tabela_pagamentos');
+            let linhasHTML = "";
+            let numLinhasPreenchidas = 0;
+
+            const getList = (key) => params.has(key) ? decodeURIComponent(params.get(key)).split(' , ') : [];
+            
+            let pDatas = getList('p_datas');
+            let pValores = getList('p_valores');
+            let pCaixas = getList('p_caixas');
+
+            let maxPagamentos = Math.max(pDatas.length, pValores.length);
+
+            for (let i = 0; i < maxPagamentos; i++) {
+                let dataPg = pDatas[i] || "";
+                let valPgStr = pValores[i] || "0";
+                let rubrica = pCaixas[i] || "";
+
+                if (!valPgStr || valPgStr === "0" || valPgStr === "") continue;
+
+                let valPg = lerNumero(valPgStr);
+                saldoDevedor = saldoDevedor - valPg;
+
+                linhasHTML += `
+                <tr>
+                    <td>${dataPg}</td>
+                    <td>R$ ${formatarMoeda(valPg)}</td>
+                    <td>R$ ${formatarMoeda(saldoDevedor)}</td>
+                    <td>PAGAMENTO REALIZADO</td>
+                    <td>-</td>
+                    <td>${rubrica.toUpperCase()}</td>
+                </tr>`;
+                numLinhasPreenchidas++;
+            }
+
+            const totalLinhas = 17;
+            for(let j = numLinhasPreenchidas; j < totalLinhas; j++) {
+                linhasHTML += `<tr><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+            }
+
+            tbody.innerHTML = linhasHTML;
 
             // Automação da Impressão
             if (params.has('cliente')) {
