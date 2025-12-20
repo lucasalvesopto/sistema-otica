@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Carnê Pix Automático - AppSheet</title>
+    <title>Carnê Pix Automático - Ótica Tecnológica</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
 
@@ -65,8 +65,9 @@
         .baixa-linha:last-child { border-bottom: none; }
         
         .boleto-qr { width: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px dotted #ccc; padding-left: 5px; }
-        .qr-img { width: 90px; height: 90px; margin-bottom: 5px; }
-        .pix-tag { font-size: 10px; font-weight: 900; background: #000; color: #fff; padding: 2px 8px; border-radius: 10px; margin-bottom: 5px;}
+        .qr-img { width: 90px; height: 90px; margin-bottom: 2px; }
+        .pix-tag { font-size: 10px; font-weight: 900; background: #000; color: #fff; padding: 2px 8px; border-radius: 10px; margin-bottom: 2px;}
+        .pix-info { font-size: 6px; text-align: center; line-height: 1.2; color: #333; }
         
         /* Loading Overlay */
         #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.95); display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 9999; visibility: hidden; }
@@ -103,21 +104,17 @@
     <div id="printable-area"></div>
 
     <script>
-        // CORREÇÃO DE DATA (Assume PADRÃO AMERICANO: Mês/Dia/Ano)
         function corrigirDataAppSheet(dataStr) {
             if (!dataStr) return "";
             if (dataStr.includes('/')) {
                 const partes = dataStr.split('/'); 
-                // Assumindo Mês/Dia/Ano vindo do AppSheet
-                // partes[0] = Mês
-                // partes[1] = Dia
-                // partes[2] = Ano
-                // Retorno para input HTML (Ano-Mês-Dia)
-                
-                // Função auxiliar para garantir 2 dígitos (01, 05, etc)
-                const pad = (n) => n.toString().padStart(2, '0');
-                
-                return `${partes[2]}-${pad(partes[0])}-${pad(partes[1])}`;
+                if (partes.length === 3) {
+                    if (parseInt(partes[1]) > 12) {
+                         return `${partes[2]}-${partes[0]}-${partes[1]}`;
+                    } else {
+                        return `${partes[2]}-${partes[1]}-${partes[0]}`;
+                    }
+                }
             }
             return dataStr;
         }
@@ -131,8 +128,6 @@
             if (params.has('total')) document.getElementById('valorTotal').value = params.get('total');
             if (params.has('entrada')) document.getElementById('valorEntrada').value = params.get('entrada');
             if (params.has('parcelas')) document.getElementById('qtdParcelas').value = params.get('parcelas');
-            
-            // Aplica a correção de data Americana
             if (params.has('entrega')) document.getElementById('dataEntrega').value = corrigirDataAppSheet(params.get('entrega'));
             if (params.has('vencimento')) document.getElementById('dataRestante').value = corrigirDataAppSheet(params.get('vencimento'));
 
@@ -202,6 +197,8 @@
             const saldoRestante = d.total - d.entrada;
             const parcelasRestantes = d.qtdParcelas - 1;
             let valorRestanteBase = 0, restoCentavos = 0;
+            
+            // Cálculo padrão (SEM centavos extras)
             if(parcelasRestantes > 0) {
                 valorRestanteBase = Math.floor((saldoRestante / parcelasRestantes) * 100) / 100;
                 restoCentavos = (saldoRestante - (valorRestanteBase * parcelasRestantes)).toFixed(2);
@@ -214,19 +211,24 @@
 
             for (let i = 1; i <= d.qtdParcelas; i++) {
                 let valorParcela = 0, dataFormatada = "", obs = "";
+                
                 if (i === 1) {
-                    valorParcela = d.entrada; dataFormatada = dataAtualEntrada.toLocaleDateString('pt-BR'); obs = "ENTRADA (ATO DA ENTREGA)";
+                    valorParcela = d.entrada; 
+                    dataFormatada = dataAtualEntrada.toLocaleDateString('pt-BR'); 
+                    obs = "ENTRADA (ATO DA ENTREGA)";
                 } else {
-                    valorParcela = valorRestanteBase; if (i === 2) valorParcela += parseFloat(restoCentavos);
-                    dataFormatada = dataAtualRestante.toLocaleDateString('pt-BR'); obs = "CREDIÁRIO LOJA";
+                    valorParcela = valorRestanteBase; 
+                    if (i === 2) valorParcela += parseFloat(restoCentavos);
+                    dataFormatada = dataAtualRestante.toLocaleDateString('pt-BR'); 
+                    obs = "CREDIÁRIO LOJA";
                     dataAtualRestante.setMonth(dataAtualRestante.getMonth() + 1);
                 }
-                
+
                 let valorStr = valorParcela.toLocaleString('pt-BR', {minimumFractionDigits: 2});
                 
-                // --- TXID SIMPLIFICADO: OS + PARCELA ---
-                // Exemplo: OS358-1
-                let txidPersonalizado = `${d.os}-${i}`;
+                // TxID simples para o QR Code (OS + Parcela)
+                let osLimpa = d.os.replace(/[^0-9]/g, '');
+                let txidPersonalizado = `${osLimpa}P${i}`; 
                 
                 let pixPayload = gerarPayloadPix("oticatecnologica@gmail.com", "OTICA TECNOLOGICA", "ITAPIPOCA", valorParcela.toFixed(2), txidPersonalizado);
                 let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(pixPayload)}`;
@@ -263,7 +265,15 @@
                                     <div class="baixa-linha"><span>Dt: __/__ Val: R$_______</span><span>Ass:___________</span></div>
                                 </div>
                             </div>
-                            <div class="boleto-qr"><span class="pix-tag">PAGUE NO PIX</span><img src="${qrUrl}" class="qr-img"><div class="lbl-sm" style="text-align:center;">App do Banco</div></div>
+                            <div class="boleto-qr">
+                                <span class="pix-tag">PAGUE NO PIX</span>
+                                <img src="${qrUrl}" class="qr-img">
+                                <div class="pix-info">
+                                    <strong>Favorecido:</strong> Lucas de Almeida Alves<br>
+                                    <strong>Banco:</strong> C6 Bank<br>
+                                    <strong>Chave:</strong> oticatecnologica@gmail.com
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>`;
