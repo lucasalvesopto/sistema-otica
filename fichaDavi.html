@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Ficha Crediário Dupla - Loja Alves</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0; padding: 0;
+            background: #ccc; /* Fundo cinza na tela para ver a folha branca */
+            color: #000;
+        }
+
+        /* CONFIGURAÇÃO DE IMPRESSÃO A4 RETRATO */
+        @media print {
+            @page { 
+                size: A4 portrait; 
+                margin: 0; 
+            }
+            body { 
+                background: white; 
+                -webkit-print-color-adjust: exact; 
+            }
+            #loading-overlay { display: none !important; }
+            .sheet { width: 100% !important; height: auto !important; margin: 0 !important; box-shadow: none !important; }
+        }
+
+        /* Simulação da Folha A4 na Tela */
+        .sheet {
+            width: 210mm;
+            height: 296mm; /* Quase 297mm */
+            background: white;
+            margin: 20px auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Metade da Página (Ficha Individual) */
+        .half-page {
+            width: 100%;
+            height: 148mm; /* Metade exata de A4 */
+            box-sizing: border-box;
+            padding: 8mm 10mm; /* Margens internas */
+            position: relative;
+        }
+
+        /* Linha de Corte entre as duas vias */
+        .cut-line {
+            width: 100%;
+            border-bottom: 1px dashed #999;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+        }
+        /* Texto "Corte Aqui" */
+        .cut-text {
+            position: absolute;
+            bottom: -8px;
+            right: 10mm;
+            background: white;
+            padding: 0 5px;
+            font-size: 10px;
+            color: #666;
+        }
+
+        /* CABEÇALHO AZUL */
+        .header {
+            background-color: #000080;
+            color: white;
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #000;
+            border-radius: 5px 5px 0 0;
+        }
+        .header-title { font-size: 20px; font-weight: bold; }
+        .header-logo { text-align: right; line-height: 1; }
+        .logo-main { font-size: 18px; font-weight: 900; color: #FFD700; }
+        .logo-sub { font-size: 9px; color: #fff; }
+
+        /* Label da Via (Loja/Cliente) */
+        .via-label {
+            font-size: 9px;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 2px;
+            text-transform: uppercase;
+            color: #666;
+        }
+
+        /* CORPO DA FICHA */
+        .content { padding-top: 10px; }
+
+        .top-info { 
+            display: flex; gap: 30px; margin-bottom: 20px; 
+            font-weight: bold; font-size: 13px; 
+        }
+        
+        .input-group { margin-bottom: 6px; }
+        .input-box {
+            border: 2px solid #000080;
+            padding: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            min-height: 18px;
+            display: flex; align-items: center;
+            background: #fff;
+        }
+        .label-float {
+            font-size: 11px; margin-bottom: 1px; color: #000080; font-weight: bold;
+        }
+
+        .row-flex { display: flex; gap: 10px; }
+        .col { flex: 1; }
+
+        /* GRID DE PARCELAS */
+        .grid-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        th { background-color: #e0e0e0; border: 1px solid #000080; padding: 2px; color: #000080; }
+        td { border: 1px solid #000080; padding: 2px; height: 16px; text-align: center; font-weight: bold; }
+        
+        /* Lateral Direita */
+        .sidebar {
+            width: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding-left: 5px;
+        }
+
+        .signature-line {
+            border-top: 2px solid #000080;
+            width: 100%;
+            text-align: center;
+            padding-top: 2px;
+            font-weight: bold;
+            color: #000080;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .qr-area {
+            text-align: center;
+            margin-top: auto;
+            border: 1px dashed #ccc;
+            padding: 4px;
+            border-radius: 5px;
+        }
+        .qr-img { width: 70px; height: 70px; }
+        .pix-text { font-size: 9px; font-weight: bold; margin-bottom: 2px;}
+
+        #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.95); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <div style="font-size: 20px; font-weight: bold;">Gerando Dupla Via...</div>
+    </div>
+
+    <div class="sheet">
+        
+        <div class="half-page">
+            <div class="header">
+                <div class="header-title">Crediário - Carnê</div>
+                <div class="header-logo">
+                    <div class="logo-main">Loja Alves</div>
+                    <div class="logo-sub">Tudo para sua casa</div>
+                </div>
+            </div>
+            <div class="via-label">VIA DA LOJA</div>
+
+            <div class="content" id="conteudo_via1">
+                </div>
+
+            <div class="cut-line"><span class="cut-text">✂ CORTE AQUI</span></div>
+        </div>
+
+        <div class="half-page">
+            <div class="header">
+                <div class="header-title">Crediário - Carnê</div>
+                <div class="header-logo">
+                    <div class="logo-main">Loja Alves</div>
+                    <div class="logo-sub">Tudo para sua casa</div>
+                </div>
+            </div>
+            <div class="via-label">VIA DO CLIENTE</div>
+
+            <div class="content" id="conteudo_via2">
+                </div>
+        </div>
+
+    </div>
+
+    <script>
+        function lerNumero(str) {
+            if (!str) return 0;
+            str = String(str).replace('R$', '').trim();
+            if (str.includes(',') && str.includes('.')) { str = str.replace(/\./g, '').replace(',', '.'); } 
+            else if (str.includes(',')) { str = str.replace(',', '.'); }
+            return parseFloat(str) || 0;
+        }
+
+        function formatarMoeda(val) {
+            return val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        }
+
+        function gerarPixSimples(chave, nome, cidade) {
+            const format = (id, value) => `${id}${value.length.toString().padStart(2, '0')}${value}`;
+            const payloadKey = format('00', 'br.gov.bcb.pix') + format('01', chave);
+            let payload = '000201' + format('26', payloadKey) + format('52', '0000') + format('53', '986') + format('58', 'BR') + format('59', nome) + format('60', cidade) + '6304';
+            let crc = 0xFFFF;
+            for (let i = 0; i < payload.length; i++) {
+                crc ^= payload.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) { if ((crc & 0x8000) !== 0) crc = (crc << 1) ^ 0x1021; else crc = crc << 1; }
+            }
+            return payload + (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+        }
+
+        // Função que monta o HTML interno da ficha para ser reutilizada
+        function montarTemplate(dados) {
+            return `
+            <div class="top-info">
+                <div>Nº: <span style="color:#000;">${dados.os}</span></div>
+                <div>VALOR: <span style="color:#000;">${dados.valor}</span></div>
+            </div>
+
+            <div class="row-flex">
+                <div class="col" style="flex: 2;">
+                    <div class="input-box" style="position: relative;">
+                        <span style="position: absolute; top: -14px; left: 0;" class="label-float">Sr.(a)</span>
+                        <span>${dados.cliente}</span>
+                    </div>
+                </div>
+                <div class="col" style="flex: 1;">
+                    <div class="input-box" style="position: relative;">
+                        <span style="position: absolute; top: -14px; left: 0;" class="label-float">Dia da Venda</span>
+                        <span>${dados.data}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-box" style="margin-top: 18px; position: relative;">
+                <span style="position: absolute; top: -14px; left: 0;" class="label-float">Endereço</span>
+                <span>${dados.endereco}</span>
+            </div>
+
+            <div class="input-box" style="margin-top: 18px; position: relative;">
+                <span style="position: absolute; top: -14px; left: 0;" class="label-float">Referente a</span>
+                <span>${dados.produtos}</span>
+            </div>
+
+            <div class="grid-container">
+                <div style="flex: 1;">
+                    <table>
+                        <thead><tr><th width="35%">Parcela</th><th>Pago</th><th>Data</th></tr></thead>
+                        <tbody>${dados.htmlLeft}</tbody>
+                    </table>
+                </div>
+
+                <div style="flex: 1;">
+                    <table>
+                        <thead><tr><th width="35%">Parcela</th><th>Pago</th><th>Data</th></tr></thead>
+                        <tbody>${dados.htmlRight}</tbody>
+                    </table>
+                </div>
+
+                <div class="sidebar">
+                    <div class="qr-area">
+                        <div class="pix-text">Pagar via Pix</div>
+                        <img class="qr-img" src="${dados.qrUrl}">
+                        <div class="pix-text" style="font-size:8px;">Davi de Almeida Alves</div>
+                    </div>
+                    <div style="width: 100%;">
+                        <div class="signature-line" style="margin-bottom: 20px;">Data de Pagamento</div>
+                        <div class="signature-line">
+                            <span style="display:block; margin-bottom:2px;">${dados.vendedor}</span>
+                            Vendedor
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            
+            // Coleta de dados
+            const get = (k) => params.has(k) ? decodeURIComponent(params.get(k)).toUpperCase() : "";
+            
+            const dadosRaw = {
+                os: get('os'),
+                cliente: get('cliente'),
+                data: get('data_venda'),
+                endereco: get('endereco'),
+                produtos: get('produtos'),
+                vendedor: get('vendedor')
+            };
+
+            let valorTotal = 0;
+            let qtdParcelas = 1;
+
+            if(params.has('valor')) valorTotal = lerNumero(params.get('valor'));
+            if(params.has('parcelas')) qtdParcelas = parseInt(params.get('parcelas')) || 1;
+
+            dadosRaw.valor = "R$ " + formatarMoeda(valorTotal);
+
+            // Tabelas
+            const valorParcela = valorTotal / qtdParcelas;
+            const valorParcelaStr = formatarMoeda(valorParcela);
+
+            const getList = (key) => params.has(key) ? decodeURIComponent(params.get(key)).split(' , ') : [];
+            let pDatas = getList('p_datas');
+            let pValores = getList('p_valores');
+
+            let htmlLeft = "";
+            let htmlRight = "";
+
+            for (let i = 1; i <= 14; i++) {
+                let textoParcela = "";
+                let textoPago = "";
+                let textoData = "";
+
+                if (i <= qtdParcelas) textoParcela = `${i}x ${valorParcelaStr}`;
+                if (pValores[i-1]) {
+                    textoPago = "R$ " + formatarMoeda(lerNumero(pValores[i-1]));
+                    textoData = pDatas[i-1] || ""; 
+                }
+
+                let rowHTML = `<tr><td>${textoParcela}</td><td>${textoPago}</td><td>${textoData}</td></tr>`;
+                if (i <= 7) htmlLeft += rowHTML;
+                else if (i <= 14) htmlRight += rowHTML;
+            }
+
+            // Geração Pix (CORREÇÃO DE TELEFONE)
+            // Telefone BR precisa do prefixo +55
+            let pixCode = gerarPixSimples("+5588999976057", "DAVI ALMEIDA", "ITAPIPOCA");
+            let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(pixCode)}`;
+
+            // Monta o objeto de dados finais
+            const dadosFinais = {
+                ...dadosRaw,
+                htmlLeft: htmlLeft,
+                htmlRight: htmlRight,
+                qrUrl: qrUrl
+            };
+
+            // INJETA O CONTEÚDO NAS DUAS VIAS
+            document.getElementById('conteudo_via1').innerHTML = montarTemplate(dadosFinais);
+            document.getElementById('conteudo_via2').innerHTML = montarTemplate(dadosFinais);
+
+            // Impressão
+            if (params.has('os')) {
+                prepararImpressao();
+            } else {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        };
+
+        async function prepararImpressao() {
+            const container = document.body;
+            const imagens = container.querySelectorAll('img');
+            const promessas = [];
+
+            imagens.forEach(img => {
+                promessas.push(new Promise((resolve) => {
+                    if (img.complete) resolve();
+                    else { img.onload = resolve; img.onerror = resolve; }
+                }));
+            });
+
+            await Promise.all(promessas);
+
+            setTimeout(() => {
+                document.getElementById('loading-overlay').style.display = 'none';
+                window.print();
+            }, 500);
+        }
+    </script>
+</body>
+</html>
