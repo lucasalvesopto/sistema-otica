@@ -182,7 +182,7 @@
             <div class="via-label">VIA DA LOJA</div>
 
             <div class="content" id="conteudo_via1">
-                </div>
+            </div>
 
             <div class="cut-line"><span class="cut-text">✂ CORTE AQUI</span></div>
         </div>
@@ -198,7 +198,7 @@
             <div class="via-label">VIA DO CLIENTE</div>
 
             <div class="content" id="conteudo_via2">
-                </div>
+            </div>
         </div>
 
     </div>
@@ -214,6 +214,30 @@
 
         function formatarMoeda(val) {
             return val.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        }
+
+        // Função para corrigir data padrão americano (MM/DD/YYYY) para BR (DD/MM/YYYY)
+        function corrigirDataBR(dataStr) {
+            if (!dataStr) return "";
+            if (dataStr.includes('/')) {
+                const partes = dataStr.split('/');
+                if (partes.length === 3) {
+                    // Verifica se o primeiro número é > 12 (impossível ser mês) -> já é BR
+                    // Verifica se o segundo número é > 12 -> é Americano (Mês/Dia/Ano)
+                    if (parseInt(partes[1]) > 12) {
+                        return `${partes[1].padStart(2, '0')}/${partes[0].padStart(2, '0')}/${partes[2]}`;
+                    }
+                    // Se não dá pra ter certeza, assume que o AppSheet mandou Americano (Mês/Dia/Ano)
+                    // e inverte para BR.
+                    // ATENÇÃO: Se o AppSheet mandar YYYY-MM-DD, isso não quebra.
+                    // Ajuste para forçar padrão BR se vier MM/DD/YYYY
+                    if (partes[2].length === 4) { // Formato X/X/AAAA
+                         // Assumindo que o AppSheet envia MM/DD/YYYY por padrão
+                         return `${partes[1].padStart(2, '0')}/${partes[0].padStart(2, '0')}/${partes[2]}`;
+                    }
+                }
+            }
+            return dataStr;
         }
 
         function gerarPixSimples(chave, nome, cidade) {
@@ -302,7 +326,8 @@
             const dadosRaw = {
                 os: get('os'),
                 cliente: get('cliente'),
-                data: get('data_venda'),
+                // APLICA CORREÇÃO DE DATA AQUI
+                data: corrigirDataBR(get('data_venda')),
                 endereco: get('endereco'),
                 produtos: get('produtos'),
                 vendedor: get('vendedor')
@@ -335,7 +360,8 @@
                 if (i <= qtdParcelas) textoParcela = `${i}x ${valorParcelaStr}`;
                 if (pValores[i-1]) {
                     textoPago = "R$ " + formatarMoeda(lerNumero(pValores[i-1]));
-                    textoData = pDatas[i-1] || ""; 
+                    // APLICA CORREÇÃO DE DATA AQUI TAMBÉM
+                    textoData = corrigirDataBR(pDatas[i-1] || ""); 
                 }
 
                 let rowHTML = `<tr><td>${textoParcela}</td><td>${textoPago}</td><td>${textoData}</td></tr>`;
@@ -343,8 +369,7 @@
                 else if (i <= 14) htmlRight += rowHTML;
             }
 
-            // Geração Pix (CORREÇÃO DE TELEFONE)
-            // Telefone BR precisa do prefixo +55
+            // Geração Pix
             let pixCode = gerarPixSimples("+5588999976057", "DAVI ALMEIDA", "ITAPIPOCA");
             let qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(pixCode)}`;
 
@@ -389,5 +414,4 @@
         }
     </script>
 </body>
-
 </html>
