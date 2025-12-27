@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="robots" content="noindex, nofollow">
-    <title>Contrato Loja Alves</title>
+    <title>Contrato de Venda</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
         body {
             font-family: 'Roboto', sans-serif;
-            font-size: 11px; /* Fonte levemente menor para caber em 1 pág */
+            font-size: 11px;
             line-height: 1.3;
             color: #000;
             background: #ccc; 
@@ -23,7 +23,7 @@
                 width: 210mm; 
                 height: auto; 
                 margin: 0 !important; 
-                padding: 10mm !important; /* Margem reduzida (igual ficha) */
+                padding: 10mm !important;
                 box-shadow: none !important;
             }
             #loading-overlay { display: none !important; }
@@ -34,7 +34,7 @@
             min-height: 297mm;
             background: white;
             margin: 0 auto;
-            padding: 10mm; /* Margem visual na tela */
+            padding: 10mm;
             box-sizing: border-box;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             position: relative;
@@ -116,7 +116,7 @@
         <h1>Contrato de Compra de Móveis</h1>
 
         <p>
-            Pelo presente instrumento particular, de um lado, <strong>CREDIÁRIO CARIOCA</strong>, CNPJ 17.286.981/0001-88, localizada em Itapipoca/CE, Bairro Cruzeiro, Dom Aureliano Matos, 2176, representada por M Albeniza de Almeidas Alves (88) 9 8130-7216, doravante denominada <strong>CONTRATADA</strong>, e, de outro lado:
+            Pelo presente instrumento particular, de um lado, <strong id="emp_nome">EMPRESA CONTRATADA</strong>, CNPJ <span id="emp_cnpj"></span>, localizada em <span id="emp_end"></span>, representada por <span id="emp_rep"></span> <span id="emp_tel"></span>, doravante denominada <strong>CONTRATADA</strong>, e, de outro lado:
         </p>
 
         <div class="client-box">
@@ -187,10 +187,16 @@
 
             <div class="signatures-row">
                 <div class="sig-block">
-                    <div class="sig-line">M ALBENIZA DE ALMEIDAS ALVES<br>Crediário Carioca (CONTRATADA)</div>
+                    <div class="sig-line">
+                        <span id="sig_emp_rep">REPRESENTANTE</span><br>
+                        <span id="sig_emp_nome">CONTRATADA</span> (CONTRATADA)
+                    </div>
                 </div>
                 <div class="sig-block">
-                    <div class="sig-line"><span id="sig_cliente">CLIENTE</span><br>CONTRATANTE</div>
+                    <div class="sig-line">
+                        <span id="sig_cliente">CLIENTE</span><br>
+                        CONTRATANTE
+                    </div>
                 </div>
             </div>
         </div>
@@ -215,8 +221,10 @@
             v = v.replace(/\D/g, ""); // Remove tudo o que não é dígito
             if (v.length === 11) { // CPF
                 return v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+            } else if (v.length === 14) { // CNPJ (Adicionado caso envie CNPJ limpo)
+                return v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
             }
-            return v; // Retorna original se não for 11 dígitos
+            return v; 
         }
 
         function formatarTelefone(v) {
@@ -263,7 +271,20 @@
                 return val.toUpperCase();
             };
 
-            // Dados Cliente
+            // === DADOS DA EMPRESA (NOVO) ===
+            if(get('emp_nome')) {
+                document.getElementById('emp_nome').innerText = get('emp_nome');
+                document.getElementById('sig_emp_nome').innerText = get('emp_nome');
+            }
+            if(get('emp_cnpj')) document.getElementById('emp_cnpj').innerText = formatarDocumento(get('emp_cnpj'));
+            if(get('emp_end')) document.getElementById('emp_end').innerText = get('emp_end');
+            if(get('emp_rep')) {
+                document.getElementById('emp_rep').innerText = get('emp_rep');
+                document.getElementById('sig_emp_rep').innerText = get('emp_rep');
+            }
+            if(get('emp_tel')) document.getElementById('emp_tel').innerText = formatarTelefone(get('emp_tel'));
+
+            // === DADOS DO CLIENTE ===
             if(get('nome')) {
                 document.getElementById('c_nome').innerText = get('nome');
                 document.getElementById('sig_cliente').innerText = get('nome');
@@ -310,4 +331,3 @@
     </script>
 </body>
 </html>
-
